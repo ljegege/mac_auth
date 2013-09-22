@@ -12,18 +12,28 @@ IFC_LIST
 主要的变量：
 IFC_LIST ifc_list 存放接口和该接口所能接收的mac地址，暂时只完成一个无线网卡的wifi分享。
 ifc_list_lock 用于保护ifc_list的一致性。
+
+
 mac_auth_init(void)
 参数说明：
 功能说明：
-	初始化允许接入的网络的mac地址列表并创建线程，该线程用于接收外部传进来的mac地址。 流程说明：
+	初始化允许接入的网络的mac地址列表并创建线程，该线程用于监听连接端口和接收外部传进来的mac地址。 
+流程说明：
+	初始化ifc_list
 	从配置文件中读取预先设定的可以接入网络的mac地址，并将其加入到ifc_list中的accept_mac_array变量中。
 	创建mac_auth_sock_thread.
-mac_auth_recv_thread:
+
+
+
+mac_auth_sock_thread:
 参数说明：
 功能说明：
 	完成socket的创建并同步接收mac地址，将接收到的mac地址存储在accept_mac_array中
 流程说明：
-	创建监听端口listen_sock.
+	创建以太网接口sock
+	获取所有以太网设备的设备信息
+	根据有线网的ip地址，创建监听端口listen_sock.	
+	绑定监听地址
 	开始监听端口等待客户机的连接。
 	初始化用于接收mac地址的recv_sock.
 	接收从recv_sock传送过来的mac地址
@@ -31,12 +41,41 @@ mac_auth_recv_thread:
 	将接收到的mac地址加入ifc_list_lock锁中。
 	释放锁。
 	返回第一步继续接收mac地址。
+
 mac_auth_found(ifc_name, src_mac_addr):
 参数说明：
 功能说明：
 	查找指定的mac地址是否在accept_mac_array中。查找成功则返回1，失败则返回0。
 流程说明：
 	获取ifc_list_lock锁。
-	从ifc_list中的mac_accept_array中查找对应的src_mac_addr地址如果能找到对应的mac地址则释放锁并返回1，否则释放锁返回0.
+	从ifc_list中的mac_accept_array中查找对应的src_mac_addr地址
+	如果能找到对应的mac地址则释放锁并返回0，否则释放锁返回-1.
+
+
+add_mac_addr(ifc_list_p, addr)
+参数说明：
+功能说明：
+	将addr添加到ifc_list_p所指的链表中
+流程说明：
+	判断ifc_list_p中是否有空间可以存放新的mac地址
+		如果没有则重新为ifc_list_p分配空间
+		如果有则直接将addr地址添加进去
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
