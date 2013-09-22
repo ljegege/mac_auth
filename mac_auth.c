@@ -184,7 +184,7 @@ static void* mac_auth_sock_thread(void* args)
     listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     // 绑定监听地址
     bind(listen_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-    listen(listen_sock, 5);
+    listen(listen_sock, 10);
 
     recv_sock = -1;
     while(1)
@@ -219,7 +219,9 @@ static void* mac_auth_sock_thread(void* args)
             {
                 // close（-1）不知道会有什么后果？？？？
                 close(recv_sock);
+                cli_addr_len = sizeof(cli_addr);
                 recv_sock = accept(listen_sock, (struct sockaddr*)&cli_addr, &cli_addr_len);
+                perror("accept:");
 //#ifdef HOSTAPD_DEBUG
                 printf("client=%s\n", inet_ntoa(cli_addr.sin_addr));
 //#endif
@@ -263,13 +265,13 @@ static void* mac_auth_sock_thread(void* args)
  */
 int mac_auth_found(char* ifc_name, u8* src_mac_addr)
 {
-    if(strcmp(ifc_name, ifc_list.ifc_name))
+    if(!strcmp(ifc_name, ifc_list.ifc_name))
     {
         // 获取ifc_list_lock锁。
         pthread_mutex_lock(&ifc_list_lock);
         int i, is_found;
         is_found = 0;
-        for(i = 0; i < ifc_list.array_len; ++i)
+        for(i = 0; i < ifc_list.mac_count; ++i)
         {
             // 从ifc_list中的mac_accept_array中查找对应的src_mac_addr地址
             if(memcmp(src_mac_addr, ifc_list.accept_mac_array[i].mac_addr, ETH_ALEN) == 0)
